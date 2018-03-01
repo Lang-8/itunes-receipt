@@ -162,7 +162,7 @@ module Itunes
         endpoint,
         request_data.to_json
       )
-      response = JSON.parse(response).with_indifferent_access
+      response = JSON.parse(response.body).with_indifferent_access
     end
 
     def self.successful_response(response)
