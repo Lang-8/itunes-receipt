@@ -248,5 +248,31 @@ describe Itunes::Receipt do
         end
       end
     end
+
+    describe '#pending_renewal_info' do
+      let(:receipt) { Itunes::Receipt.verify! 'receipt-data' }
+      subject { receipt.pending_renewal_info }
+      context 'when pending_renewal_info is an Array' do
+        before do
+          fake_json :array_of_pending_renewal_info
+        end
+        it { should be_a Array }
+        it 'should include only Itunes::Receipt::PendingInfo' do
+          receipt.pending_renewal_info.each do |element|
+            element.should be_a Itunes::Receipt::PendingInfo
+          end
+        end
+        it 'should return valid Receipt instance for autorenew subscription' do
+          receipt = Itunes::Receipt.verify! 'array_of_pending_renewal_info'
+          receipt.should be_instance_of Itunes::Receipt
+          receipt.pending_renewal_info.first.auto_renew_status.should == "0"
+          receipt.pending_renewal_info.first.expiration_intent.should == "1"
+          receipt.pending_renewal_info.first.is_in_billing_retry_period.should == "0"
+          receipt.pending_renewal_info.first.product_id.should == "com.example.product.old"
+          receipt.pending_renewal_info.first.auto_renew_product_id.should == "com.example.product.new"
+          receipt.pending_renewal_info.first.original_transaction_id.should == "1000000131413546"
+        end
+      end
+    end
   end
 end

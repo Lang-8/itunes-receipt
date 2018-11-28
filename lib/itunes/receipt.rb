@@ -22,6 +22,15 @@ module Itunes
       end
     end
 
+    PendingInfo = Struct.new(
+      :auto_renew_product_id,
+      :auto_renew_status,
+      :expiration_intent,
+      :is_in_billing_retry_period,
+      :product_id,
+      :original_transaction_id
+    )
+
     attr_reader(
       :adam_id,
       :app_item_id,
@@ -48,6 +57,7 @@ module Itunes
       :request_date_pst,
       :transaction_id,
       :version_external_identifier,
+      :pending_renewal_info,
     )
 
     def initialize(attributes = {})
@@ -124,6 +134,20 @@ module Itunes
       end
       @transaction_id = receipt_attributes[:transaction_id]
       @version_external_identifier = receipt_attributes[:version_external_identifier]
+
+      @pending_renewal_info = case attributes[:pending_renewal_info]
+      when Array
+        attributes[:pending_renewal_info].collect do |i|
+          PendingInfo.new(
+            i["auto_renew_product_id"],
+            i["auto_renew_status"],
+            i["expiration_intent"],
+            i["is_in_billing_retry_period"],
+            i["product_id"],
+            i["original_transaction_id"]
+          )
+        end
+      end
     end
 
     def application_receipt?
