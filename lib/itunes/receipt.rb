@@ -41,6 +41,7 @@ module Itunes
       :download_id,
       :expires_date,
       :cancellation_date,
+      :cancellation_reason,
       :in_app,
       :is_trial_period,
       :itunes_env,
@@ -75,6 +76,7 @@ module Itunes
       @cancellation_date = if receipt_attributes[:cancellation_date]
         Time.parse receipt_attributes[:cancellation_date].sub('Etc/GMT', 'GMT')
       end
+      @cancellation_reason = receipt_attributes[:cancellation_reason]
       @in_app = if receipt_attributes[:in_app]
         receipt_attributes[:in_app].map { |ia| self.class.new(:receipt => ia) }
       end
