@@ -14,7 +14,7 @@ describe Itunes::Receipt do
     it 'should not pass along shared secret if not set' do
       fake_json(:invalid)
       Itunes.shared_secret = nil
-      RestClient.should_receive(:post).with(Itunes.endpoint, {:'receipt-data' => 'receipt-data'}.to_json).and_return("{}")
+      Faraday.should_receive(:post).with(Itunes.endpoint, {:'receipt-data' => 'receipt-data'}.to_json).and_raise(Itunes::Receipt::VerificationFailed)
       expect do
         Itunes::Receipt.verify! 'receipt-data'
       end.to raise_error Itunes::Receipt::VerificationFailed
@@ -23,7 +23,7 @@ describe Itunes::Receipt do
     it 'should pass along shared secret if set' do
       fake_json(:invalid)
       Itunes.shared_secret = 'hey'
-      RestClient.should_receive(:post).with(Itunes.endpoint, {:'receipt-data' => 'receipt-data', :password => 'hey'}.to_json).and_return("{}")
+      Faraday.should_receive(:post).with(Itunes.endpoint, {:'receipt-data' => 'receipt-data', :password => 'hey'}.to_json).and_raise(Itunes::Receipt::VerificationFailed)
       expect do
         Itunes::Receipt.verify! 'receipt-data'
       end.to raise_error Itunes::Receipt::VerificationFailed
