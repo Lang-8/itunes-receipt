@@ -14,7 +14,7 @@ describe Itunes::Receipt do
     it 'should not pass along shared secret if not set' do
       fake_json(:invalid)
       Itunes.shared_secret = nil
-      RestClient.should_receive(:post).with(Itunes.endpoint, {:'receipt-data' => 'receipt-data'}.to_json).and_return("{}")
+      Faraday.should_receive(:post).with(Itunes.endpoint, {:'receipt-data' => 'receipt-data'}.to_json).and_raise(Itunes::Receipt::VerificationFailed)
       expect do
         Itunes::Receipt.verify! 'receipt-data'
       end.to raise_error Itunes::Receipt::VerificationFailed
@@ -23,7 +23,7 @@ describe Itunes::Receipt do
     it 'should pass along shared secret if set' do
       fake_json(:invalid)
       Itunes.shared_secret = 'hey'
-      RestClient.should_receive(:post).with(Itunes.endpoint, {:'receipt-data' => 'receipt-data', :password => 'hey'}.to_json).and_return("{}")
+      Faraday.should_receive(:post).with(Itunes.endpoint, {:'receipt-data' => 'receipt-data', :password => 'hey'}.to_json).and_raise(Itunes::Receipt::VerificationFailed)
       expect do
         Itunes::Receipt.verify! 'receipt-data'
       end.to raise_error Itunes::Receipt::VerificationFailed
@@ -245,6 +245,32 @@ describe Itunes::Receipt do
           receipt.latest.each do |element|
             element.should be_a Itunes::Receipt
           end
+        end
+      end
+    end
+
+    describe '#pending_renewal_info' do
+      let(:receipt) { Itunes::Receipt.verify! 'receipt-data' }
+      subject { receipt.pending_renewal_info }
+      context 'when pending_renewal_info is an Array' do
+        before do
+          fake_json :array_of_pending_renewal_info
+        end
+        it { should be_a Array }
+        it 'should include only Itunes::Receipt::PendingInfo' do
+          receipt.pending_renewal_info.each do |element|
+            element.should be_a Itunes::Receipt::PendingInfo
+          end
+        end
+        it 'should return valid Receipt instance for autorenew subscription' do
+          receipt = Itunes::Receipt.verify! 'array_of_pending_renewal_info'
+          receipt.should be_instance_of Itunes::Receipt
+          receipt.pending_renewal_info.first.auto_renew_status.should == "0"
+          receipt.pending_renewal_info.first.expiration_intent.should == "1"
+          receipt.pending_renewal_info.first.is_in_billing_retry_period.should == "0"
+          receipt.pending_renewal_info.first.product_id.should == "com.example.product.old"
+          receipt.pending_renewal_info.first.auto_renew_product_id.should == "com.example.product.new"
+          receipt.pending_renewal_info.first.original_transaction_id.should == "1000000131413546"
         end
       end
     end
